@@ -9,21 +9,24 @@ class FacetedProductSearch
 {
     private const PER_PAGE = 20;
 
+    private const MAX_PER_PAGE = 100;
+
     /**
-     * @param  array{category?: string, tags?: list<string>, priceMin?: float|int, priceMax?: float|int, sort?: string, page?: int}  $filters
+     * @param  array{category?: string, tags?: list<string>, priceMin?: float|int, priceMax?: float|int, sort?: string, page?: int, perPage?: int}  $filters
      * @return array{results: list<array<string, mixed>>, byVendor: list<array<string, mixed>>, byPrice: list<array<string, mixed>>, bySize: list<array<string, mixed>>, meta: list<array{total: int}>}
      */
     public function handle(array $filters): array
     {
         $page = max(1, (int) ($filters['page'] ?? 1));
+        $perPage = min(self::MAX_PER_PAGE, max(1, (int) ($filters['perPage'] ?? self::PER_PAGE)));
 
         $pipeline = [
             ['$match' => $this->buildMatch($filters)],
             ['$facet' => [
                 'results' => [
                     ['$sort' => $this->buildSort($filters)],
-                    ['$skip' => ($page - 1) * self::PER_PAGE],
-                    ['$limit' => self::PER_PAGE],
+                    ['$skip' => ($page - 1) * $perPage],
+                    ['$limit' => $perPage],
                     ['$project' => [
                         'name' => 1,
                         'price' => 1,

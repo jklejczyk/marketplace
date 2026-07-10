@@ -10,8 +10,12 @@ class FrequentlyBoughtTogether
 {
     private const LIMIT = 10;
 
-    public function handle(Product $product): array
+    private const MAX_LIMIT = 100;
+
+    public function handle(Product $product, int $limit = self::LIMIT): array
     {
+        $limit = min(self::MAX_LIMIT, max(1, $limit));
+
         $pipeline = [
             ['$match' => ['items.product_id' => new ObjectId($product->id)]],
             ['$unwind' => '$items'],
@@ -23,7 +27,7 @@ class FrequentlyBoughtTogether
             ],
             ],
             ['$sort' => ['count' => -1]],
-            ['$limit' => self::LIMIT],
+            ['$limit' => $limit],
         ];
 
         $result = Order::raw(fn ($collection) => $collection->aggregate(

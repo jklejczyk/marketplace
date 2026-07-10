@@ -8,8 +8,12 @@ class TopVendorsByRevenue
 {
     private const LIMIT = 10;
 
-    public function handle(): array
+    private const MAX_LIMIT = 100;
+
+    public function handle(int $limit = self::LIMIT): array
     {
+        $limit = min(self::MAX_LIMIT, max(1, $limit));
+
         $pipeline = [
             ['$unwind' => '$items'],
             ['$group' => [
@@ -18,7 +22,7 @@ class TopVendorsByRevenue
                 'vendor_name' => ['$first' => '$items.vendor_name'],
             ]],
             ['$sort' => ['revenue' => -1]],
-            ['$limit' => self::LIMIT],
+            ['$limit' => $limit],
         ];
 
         $result = Order::raw(fn ($collection) => $collection->aggregate(

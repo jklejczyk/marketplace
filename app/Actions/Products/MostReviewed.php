@@ -9,8 +9,12 @@ class MostReviewed
 {
     private const LIMIT = 10;
 
-    public function handle(?string $productId = null): array
+    private const MAX_LIMIT = 100;
+
+    public function handle(?string $productId = null, int $limit = self::LIMIT): array
     {
+        $limit = min(self::MAX_LIMIT, max(1, $limit));
+
         $pipeline = [
             ...($productId !== null ? [['$match' => ['product_id' => new ObjectId($productId)]]] : []),
             ['$group' => [
@@ -19,7 +23,7 @@ class MostReviewed
                 'avg_rating' => ['$avg' => '$rating'],
             ]],
             ['$sort' => ['reviews_count' => -1]],
-            ['$limit' => self::LIMIT],
+            ['$limit' => $limit],
         ];
 
         $result = Review::raw(fn ($collection) => $collection->aggregate(
