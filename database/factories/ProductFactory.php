@@ -24,6 +24,8 @@ class ProductFactory extends Factory
         $name = Str::title(fake()->words(fake()->numberBetween(2, 4), true));
         $price = fake()->randomFloat(2, 15, 500);
 
+        $variants = $this->makeVariants($price);
+
         return [
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numberBetween(1, 9_999_999),
@@ -35,7 +37,9 @@ class ProductFactory extends Factory
             'category_id' => null,
             'category_path' => [],
 
-            'variants' => $this->makeVariants($price),
+            'variants' => $variants,
+            'total_stock' => array_sum(array_column($variants, 'stock')),
+
             'tags' => fake()->randomElements(
                 ['zima', 'lato', 'unisex', 'premium', 'wyprzedaż', 'nowość', 'eko', 'limitowana'],
                 fake()->numberBetween(1, 3)

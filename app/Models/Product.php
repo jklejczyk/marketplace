@@ -10,8 +10,11 @@ use MongoDB\Laravel\Relations\BelongsTo;
 class Product extends Model
 {
     use HasFactory;
+
     protected $connection = 'mongodb';
+
     protected $table = 'products';
+
     protected $fillable = [
         'name',
         'slug',
@@ -27,8 +30,8 @@ class Product extends Model
         'avg_rating',
         'reviews_count',
         'active',
+        'total_stock',
     ];
-
 
     protected function casts(): array
     {
@@ -43,6 +46,4 @@ class Product extends Model
     {
         return $this->belongsTo(Vendor::class, 'vendor_id');
     }
-
-
 }
