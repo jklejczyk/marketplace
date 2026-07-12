@@ -8,6 +8,7 @@ use MongoDB\Laravel\Eloquent\Model;
 class Vendor extends Model
 {
     use HasFactory;
+
     protected $connection = 'mongodb';
 
     protected $table = 'vendors';
@@ -20,6 +21,6 @@ class Vendor extends Model
         'rating',
         'products_count',
         'active',
-
+        'location',
     ];
 }

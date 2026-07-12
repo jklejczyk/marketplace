@@ -4,6 +4,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\User;
+use App\Models\Vendor;
 use MongoDB\BSON\Decimal128;
 use MongoDB\BSON\ObjectId;
 
@@ -173,4 +174,61 @@ test('GET /api/v1/products/{product}/frequently-bought-together respektuje limit
     $this->getJson("/api/v1/products/{$target->id}/frequently-bought-together?limit=2")
         ->assertOk()
         ->assertJsonCount(2, 'data');
+});
+
+test('GET /api/v1/vendors/nearby zwraca vendorów w promieniu z dystansem, wyklucza dalekich', function () {
+    Vendor::truncate();
+    Vendor::raw(fn ($collection) => $collection->createIndex(['location' => '2dsphere']));
+
+    Vendor::factory()->create([
+        'name' => 'Blisko',
+        'location' => ['type' => 'Point', 'coordinates' => [21.001, 52.231]],
+    ]);
+    Vendor::factory()->create([
+        'name' => 'Kraków',
+        'location' => ['type' => 'Point', 'coordinates' => [19.945, 50.065]],
+    ]);
+
+    $response = $this->getJson('/api/v1/vendors/nearby?lng=21.00&lat=52.23&radius=5000');
+
+    $response->assertOk()
+        ->assertJsonStructure(['data' => [['vendor_id', 'name', 'distance_m']]])
+        ->assertJsonCount(1, 'data');
+
+    $row = $response->json('data.0');
+    expect($row['vendor_id'])->toBeString()
+        ->and($row['name'])->toBe('Blisko')
+        ->and($row['distance_m'])->toBeLessThan(1000.0);
+});
+
+test('GET /api/v1/vendors/nearby wymaga lat i lng (422)', function () {
+    $this->getJson('/api/v1/vendors/nearby')->assertUnprocessable();
+});
+
+test('POST /api/v1/vendors/in-area zwraca vendorów wewnątrz wielokąta', function () {
+    Vendor::truncate();
+
+    Vendor::factory()->create([
+        'name' => 'W środku',
+        'location' => ['type' => 'Point', 'coordinates' => [21.00, 52.23]],
+    ]);
+    Vendor::factory()->create([
+        'name' => 'Kraków',
+        'location' => ['type' => 'Point', 'coordinates' => [19.945, 50.065]],
+    ]);
+
+    $response = $this->postJson('/api/v1/vendors/in-area', [
+        'ring' => [[20.9, 52.15], [21.1, 52.15], [21.1, 52.30], [20.9, 52.30]],
+    ]);
+
+    $response->assertOk()
+        ->assertJsonStructure(['data' => [['vendor_id', 'name', 'location']]])
+        ->assertJsonCount(1, 'data');
+
+    expect($response->json('data.0.name'))->toBe('W środku')
+        ->and($response->json('data.0.vendor_id'))->toBeString();
+});
+
+test('POST /api/v1/vendors/in-area wymaga ring (422)', function () {
+    $this->postJson('/api/v1/vendors/in-area', [])->assertUnprocessable();
 });
