@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Cart;
 use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
@@ -27,6 +28,8 @@ class MarketplaceSeeder extends Seeder
 
     private const MAX_REVIEWS_PER_PRODUCT = 25;
 
+    private const CARTS = 10;
+
     public function run(): void
     {
         $this->command->warn('Czyszczenie kolekcji Mongo...');
@@ -35,6 +38,7 @@ class MarketplaceSeeder extends Seeder
         Category::truncate();
         Order::truncate();
         Review::truncate();
+        Cart::truncate();
 
         $leaves = $this->seedCategoryTree();
         $this->command->info('Kategorie: '.Category::count().' (w tym liści: '.count($leaves).')');
@@ -59,6 +63,9 @@ class MarketplaceSeeder extends Seeder
 
         $this->backfillProductRatings();
         $this->command->info('Backfill avg_rating/reviews_count przez $group: gotowe');
+
+        $this->seedCarts($users);
+        $this->command->info('Koszyki: '.Cart::count());
     }
 
     private function seedCategoryTree(): array
@@ -173,6 +180,15 @@ class MarketplaceSeeder extends Seeder
             if (++$done % 100 === 0) {
                 $this->command->info("  produkty z recenzjami: {$done}/".$products->count());
             }
+        }
+    }
+
+    private function seedCarts(Collection $users): void
+    {
+        $buyers = $users->random(min(self::CARTS, $users->count()));
+
+        foreach ($buyers as $buyer) {
+            Cart::factory()->forUser($buyer)->create();
         }
     }
 
