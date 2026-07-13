@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\FacetedProductSearchController;
 use App\Http\Controllers\Api\V1\FrequentlyBoughtTogetherController;
 use App\Http\Controllers\Api\V1\MostReviewedController;
 use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\ProductSearchController;
 use App\Http\Controllers\Api\V1\TopVendorsController;
 use App\Http\Controllers\Api\V1\VendorsInAreaController;
 use App\Http\Controllers\Api\V1\VendorsNearbyController;
@@ -16,6 +17,7 @@ Route::get('/user', function (Request $request) {
 
 Route::prefix('v1')->group(function () {
     Route::get('products', FacetedProductSearchController::class);
+    Route::get('products/search', ProductSearchController::class);
     Route::get('products/most-reviewed', MostReviewedController::class);
     Route::get('products/{product}/frequently-bought-together', FrequentlyBoughtTogetherController::class);
     Route::get('vendors/top', TopVendorsController::class);

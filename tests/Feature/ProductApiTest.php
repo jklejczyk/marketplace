@@ -232,3 +232,7 @@ test('POST /api/v1/vendors/in-area zwraca vendorów wewnątrz wielokąta', funct
 test('POST /api/v1/vendors/in-area wymaga ring (422)', function () {
     $this->postJson('/api/v1/vendors/in-area', [])->assertUnprocessable();
 });
+
+test('GET /api/v1/products/search wymaga q (422)', function () {
+    $this->getJson('/api/v1/products/search')->assertUnprocessable();
+});
