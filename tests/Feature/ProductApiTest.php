@@ -103,7 +103,7 @@ test('GET /api/v1/products zwraca strukturę facets i czyści BSON', function ()
         ->assertJsonStructure([
             'data' => [
                 'results' => [['id', 'name', 'price', 'vendor_name', 'category_path']],
-                'facets' => ['byVendor', 'byPrice', 'bySize'],
+                'facets' => ['byVendor', 'byPrice', 'bySize', 'byAttribute'],
                 'meta' => ['total'],
             ],
         ]);

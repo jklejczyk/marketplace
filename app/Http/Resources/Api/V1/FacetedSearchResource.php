@@ -40,6 +40,11 @@ class FacetedSearchResource extends JsonResource
                     'size' => $bucket['_id'],
                     'count' => $bucket['count'],
                 ], $this->resource['bySize'] ?? []),
+                'byAttribute' => array_map(fn (array $bucket): array => [
+                    'key' => $bucket['_id']['key'],
+                    'value' => $bucket['_id']['value'],
+                    'count' => $bucket['count'],
+                ], $this->resource['byAttribute'] ?? []),
             ],
             'meta' => [
                 'total' => $this->resource['meta'][0]['total'] ?? 0,

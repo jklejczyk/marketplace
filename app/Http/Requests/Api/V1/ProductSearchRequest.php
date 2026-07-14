@@ -20,6 +20,8 @@ class ProductSearchRequest extends FormRequest
             'category' => ['sometimes', 'string'],
             'tags' => ['sometimes', 'array'],
             'tags.*' => ['string'],
+            'attributes' => ['sometimes', 'array'],
+            'attributes.*' => ['string'],
             'price_min' => ['sometimes', 'numeric', 'min:0'],
             'price_max' => ['sometimes', 'numeric', 'min:0'],
             'sort' => ['sometimes', 'in:price_asc,price_desc,newest'],
@@ -41,6 +43,7 @@ class ProductSearchRequest extends FormRequest
         return [
             ...isset($validated['category']) ? ['category' => $validated['category']] : [],
             ...isset($validated['tags']) ? ['tags' => $validated['tags']] : [],
+            ...isset($validated['attributes']) ? ['attributes' => $validated['attributes']] : [],
             ...isset($validated['price_min']) ? ['priceMin' => $validated['price_min']] : [],
             ...isset($validated['price_max']) ? ['priceMax' => $validated['price_max']] : [],
             ...isset($validated['sort']) ? ['sort' => $validated['sort']] : [],

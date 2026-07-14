@@ -85,3 +85,45 @@ test('zapytanie listingu korzysta z indeksu listing_idx, nie COLLSCAN', function
     expect($stats['nReturned'])->toBe(20)
         ->and($stats['totalDocsExamined'])->toBe(20);
 });
+
+test('byAttribute liczy dynamiczne atrybuty, a filtr po atrybucie zawęża listing', function () {
+    Product::factory()->create(['active' => true, 'attributes' => ['material' => 'skóra', 'kraj' => 'IT']]);
+    Product::factory()->create(['active' => true, 'attributes' => ['material' => 'skóra', 'kraj' => 'PL']]);
+    Product::factory()->create(['active' => true, 'attributes' => ['material' => 'bawełna', 'kraj' => 'PL']]);
+
+    $result = (new FacetedProductSearch)->handle([]);
+
+    $byAttribute = collect($result['byAttribute'])->mapWithKeys(
+        fn (array $b): array => [$b['_id']['key'].':'.$b['_id']['value'] => $b['count']]
+    );
+    expect($byAttribute['material:skóra'])->toBe(2)
+        ->and($byAttribute['material:bawełna'])->toBe(1)
+        ->and($byAttribute['kraj:PL'])->toBe(2)
+        ->and($byAttribute['kraj:IT'])->toBe(1);
+
+    $filtered = (new FacetedProductSearch)->handle(['attributes' => ['material' => 'skóra']]);
+    expect($filtered['meta'][0]['total'])->toBe(2);
+});
+
+test('filtr po atrybucie korzysta z wildcard index attributes_wildcard_idx, nie COLLSCAN', function () {
+    Product::raw(fn ($c) => $c->createIndex(
+        ['attributes.$**' => 1],
+        ['name' => 'attributes_wildcard_idx']
+    ));
+
+    Product::factory()->count(20)->create(['attributes' => ['material' => 'skóra', 'kraj' => 'IT']]);
+    Product::factory()->count(200)->create(['attributes' => ['material' => 'bawełna', 'kraj' => 'PL']]);
+
+    $explain = DB::connection('mongodb')->getDatabase()->command([
+        'explain' => ['find' => 'products', 'filter' => ['attributes.material' => 'skóra']],
+        'verbosity' => 'executionStats',
+    ])->toArray()[0];
+
+    $plan = $explain['queryPlanner']['winningPlan'];
+    $stats = $explain['executionStats'];
+
+    expect($plan['inputStage']['indexName'])->toBe('attributes_wildcard_idx');
+
+    expect($stats['nReturned'])->toBe(20)
+        ->and($stats['totalDocsExamined'])->toBe(20);
+});

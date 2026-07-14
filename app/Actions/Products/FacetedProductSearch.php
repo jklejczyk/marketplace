@@ -12,8 +12,8 @@ class FacetedProductSearch
     private const MAX_PER_PAGE = 100;
 
     /**
-     * @param  array{category?: string, tags?: list<string>, priceMin?: float|int, priceMax?: float|int, sort?: string, page?: int, perPage?: int}  $filters
-     * @return array{results: list<array<string, mixed>>, byVendor: list<array<string, mixed>>, byPrice: list<array<string, mixed>>, bySize: list<array<string, mixed>>, meta: list<array{total: int}>}
+     * @param  array{category?: string, tags?: list<string>, attributes?: array<string, string>, priceMin?: float|int, priceMax?: float|int, sort?: string, page?: int, perPage?: int}  $filters
+     * @return array{results: list<array<string, mixed>>, byVendor: list<array<string, mixed>>, byPrice: list<array<string, mixed>>, bySize: list<array<string, mixed>>, byAttribute: list<array<string, mixed>>, meta: list<array{total: int}>}
      */
     public function handle(array $filters): array
     {
@@ -55,6 +55,16 @@ class FacetedProductSearch
                     ['$unwind' => '$variants'],
                     ['$sortByCount' => '$variants.size'],
                 ],
+                'byAttribute' => [
+                    ['$match' => ['attributes' => ['$type' => 'object']]],
+                    ['$project' => ['kv' => ['$objectToArray' => '$attributes']]],
+                    ['$unwind' => '$kv'],
+                    ['$group' => [
+                        '_id' => ['key' => '$kv.k', 'value' => '$kv.v'],
+                        'count' => ['$sum' => 1],
+                    ]],
+                    ['$sort' => ['count' => -1, '_id.key' => 1, '_id.value' => 1]],
+                ],
                 'meta' => [
                     ['$count' => 'total'],
                 ],
@@ -83,6 +93,12 @@ class FacetedProductSearch
 
         if (! empty($filters['tags'])) {
             $match['tags'] = ['$in' => (array) $filters['tags']];
+        }
+
+        if (! empty($filters['attributes'])) {
+            foreach ((array) $filters['attributes'] as $key => $value) {
+                $match['attributes.'.$key] = $value;
+            }
         }
 
         $price = [];
