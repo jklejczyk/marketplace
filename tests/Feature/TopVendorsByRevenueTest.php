@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Products\TopVendorsByRevenue;
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use MongoDB\BSON\Decimal128;
 use MongoDB\BSON\ObjectId;
@@ -11,17 +12,27 @@ beforeEach(function () {
 
 function orderWithItems(array $items): void
 {
+    $mapped = array_map(fn (array $item): array => [
+        'product_id' => new ObjectId,
+        'name_snapshot' => 'Produkt',
+        'price_snapshot' => new Decimal128($item[2]),
+        'vendor_id' => $item[0],
+        'vendor_name' => $item[1],
+        'quantity' => $item[3],
+    ], $items);
+
+    $total = array_reduce($mapped, fn (string $carry, array $i): string => bcadd(
+        $carry,
+        bcmul((string) $i['price_snapshot'], (string) $i['quantity'], 2),
+        2
+    ), '0');
+
     Order::create([
         'user_id' => 1,
         'user_snapshot' => ['name' => 'Tester', 'email' => 'tester@example.com'],
-        'items' => array_map(fn (array $item): array => [
-            'product_id' => new ObjectId,
-            'name_snapshot' => 'Produkt',
-            'price_snapshot' => new Decimal128($item[2]),
-            'vendor_id' => $item[0],
-            'vendor_name' => $item[1],
-            'quantity' => $item[3],
-        ], $items),
+        'items' => $mapped,
+        'total' => new Decimal128($total),
+        'status' => OrderStatus::Delivered->value,
     ]);
 }
 

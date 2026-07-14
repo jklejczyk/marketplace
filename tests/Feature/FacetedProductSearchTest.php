@@ -15,7 +15,7 @@ function phone(string $vendor, float $price, string $size, bool $active = true):
         'category_path' => ['Elektronika', 'Telefony'],
         'vendor_name' => $vendor,
         'price' => $price,
-        'variants' => [['size' => $size, 'stock' => 5]],
+        'variants' => [['sku' => 'PH-'.$size, 'size' => $size, 'stock' => 5, 'price' => new Decimal128((string) $price)]],
     ]);
 }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -50,8 +51,22 @@ class OrderFactory extends Factory
             ],
             'items' => $items,
             'total' => new Decimal128($this->sumItems($items)),
+            'status' => $this->randomStatus(),
             'created_at' => fake()->dateTimeBetween('-1 year'),
         ];
+    }
+
+    protected function randomStatus(): string
+    {
+        $weighted = [
+            ...array_fill(0, 70, OrderStatus::Delivered),
+            ...array_fill(0, 10, OrderStatus::Shipped),
+            ...array_fill(0, 10, OrderStatus::Paid),
+            ...array_fill(0, 5, OrderStatus::Pending),
+            ...array_fill(0, 5, OrderStatus::Cancelled),
+        ];
+
+        return fake()->randomElement($weighted)->value;
     }
 
     public function forUser(User $user): static

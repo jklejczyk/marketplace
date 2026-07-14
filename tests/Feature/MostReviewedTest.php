@@ -19,9 +19,9 @@ function reviewsFor(Product $product, array $ratings): void
 }
 
 test('liczy recenzje i średni rating per produkt, sortuje malejąco po liczbie recenzji', function () {
-    $a = Product::factory()->create(['name' => 'A']);
-    $b = Product::factory()->create(['name' => 'B']);
-    $c = Product::factory()->create(['name' => 'C']);
+    $a = Product::factory()->create(['name' => 'AAA']);
+    $b = Product::factory()->create(['name' => 'BBB']);
+    $c = Product::factory()->create(['name' => 'CCC']);
 
     reviewsFor($a, [5, 4, 3]);
     reviewsFor($b, [2, 2]);

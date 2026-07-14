@@ -21,6 +21,7 @@ class Order extends Model
         'user_snapshot',
         'items',
         'total',
+        'status',
     ];
 
     public function user(): BelongsTo

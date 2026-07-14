@@ -3,6 +3,7 @@
 namespace App\Actions\Orders;
 
 use App\DataTransferObjects\RequestedItemData;
+use App\Enums\OrderStatus;
 use App\Exceptions\InsufficientStockException;
 use App\Models\Order;
 use App\Models\Product;
@@ -72,6 +73,7 @@ class PlaceOrder
                 'user_snapshot' => ['name' => $buyer->name, 'email' => $buyer->email],
                 'items' => $items,
                 'total' => new Decimal128($total),
+                'status' => OrderStatus::Pending->value,
             ]);
         }, attempts: self::MAX_ATTEMPTS);
 

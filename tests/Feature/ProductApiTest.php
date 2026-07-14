@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Review;
@@ -27,6 +28,8 @@ test('GET /api/v1/vendors/top serializuje revenue jako string', function () {
             'vendor_name' => 'Acme',
             'quantity' => 2,
         ]],
+        'total' => new Decimal128('200.00'),
+        'status' => OrderStatus::Delivered->value,
     ]);
 
     $response = $this->getJson('/api/v1/vendors/top');
@@ -57,18 +60,24 @@ test('GET /api/v1/products/most-reviewed serializuje product_id jako string', fu
 });
 
 test('GET /api/v1/products/{product}/frequently-bought-together rozwiązuje binding po _id', function () {
-    $a = Product::factory()->create(['name' => 'A']);
-    $b = Product::factory()->create(['name' => 'B']);
+    $a = Product::factory()->create(['name' => 'AAA']);
+    $b = Product::factory()->create(['name' => 'BBB']);
 
     $makeOrder = function (Product ...$products): void {
+        $items = array_map(fn (Product $p): array => [
+            'product_id' => new ObjectId($p->id),
+            'name_snapshot' => $p->name,
+            'price_snapshot' => new Decimal128('10.00'),
+            'vendor_id' => new ObjectId,
+            'quantity' => 1,
+        ], $products);
+
         Order::create([
             'user_id' => 1,
             'user_snapshot' => ['name' => 'T', 'email' => 't@e.com'],
-            'items' => array_map(fn (Product $p): array => [
-                'product_id' => new ObjectId($p->id),
-                'name_snapshot' => $p->name,
-                'quantity' => 1,
-            ], $products),
+            'items' => $items,
+            'total' => new Decimal128(number_format(count($items) * 10, 2, '.', '')),
+            'status' => OrderStatus::Delivered->value,
         ]);
     };
     $makeOrder($a, $b);
@@ -81,7 +90,7 @@ test('GET /api/v1/products/{product}/frequently-bought-together rozwiązuje bind
 
     $row = $response->json('data.0');
     expect($row['product_id'])->toBeString()
-        ->and($row['name'])->toBe('B')
+        ->and($row['name'])->toBe('BBB')
         ->and($row['count'])->toBe(2);
 });
 
@@ -133,6 +142,8 @@ test('GET /api/v1/vendors/top respektuje parametr limit', function () {
                 'vendor_name' => $vendorName,
                 'quantity' => 1,
             ]],
+            'total' => new Decimal128('10.00'),
+            'status' => OrderStatus::Delivered->value,
         ]);
     }
 
@@ -165,9 +176,11 @@ test('GET /api/v1/products/{product}/frequently-bought-together respektuje limit
             'user_id' => 1,
             'user_snapshot' => ['name' => 'T', 'email' => 't@e.com'],
             'items' => [
-                ['product_id' => new ObjectId($target->id), 'name_snapshot' => $target->name, 'quantity' => 1],
-                ['product_id' => new ObjectId($other->id), 'name_snapshot' => $other->name, 'quantity' => 1],
+                ['product_id' => new ObjectId($target->id), 'name_snapshot' => $target->name, 'price_snapshot' => new Decimal128('10.00'), 'vendor_id' => new ObjectId, 'quantity' => 1],
+                ['product_id' => new ObjectId($other->id), 'name_snapshot' => $other->name, 'price_snapshot' => new Decimal128('10.00'), 'vendor_id' => new ObjectId, 'quantity' => 1],
             ],
+            'total' => new Decimal128('20.00'),
+            'status' => OrderStatus::Delivered->value,
         ]);
     }
 
